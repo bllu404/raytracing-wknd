@@ -7,7 +7,7 @@ pub struct Vec3 {
     pub z: f64,
 }
 
-pub type Point = Vec3;
+pub type Point3 = Vec3;
 
 impl Default for Vec3 {
     fn default() -> Self {
@@ -86,6 +86,7 @@ impl SubAssign for Vec3 {
 }
 
 impl Vec3 {
+    #[inline(always)]
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Vec3{x, y, z}
     }
@@ -96,5 +97,13 @@ impl Vec3 {
 
     pub fn length(self) -> f64 {
         self.length_squared().sqrt()
+    }
+
+    pub fn unit_vector(self) -> Vec3 {
+        self / self.length()
+    }
+
+    pub fn dot(lhs: Vec3, rhs: Vec3) -> f64 {
+        lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z
     }
 }
