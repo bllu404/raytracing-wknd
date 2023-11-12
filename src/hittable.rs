@@ -5,8 +5,8 @@ use crate::vec::{Point3, Vec3};
 
 #[derive(Clone, Copy)]
 pub struct HitRecord {
-    p: Point3,
-    pub normal: Vec3, 
+    pub p: Point3,
+    pub normal: Vec3,
     t: f64,
     front_face: bool,
 }
@@ -17,8 +17,8 @@ impl HitRecord {
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: &Vec3) {
         self.front_face = Vec3::dot(ray.direction, *outward_normal) < 0.0;
         self.normal = if self.front_face {
-             *outward_normal
-        } else { 
+            *outward_normal
+        } else {
             -*outward_normal
         };
     }
@@ -26,7 +26,12 @@ impl HitRecord {
 
 impl Default for HitRecord {
     fn default() -> Self {
-        HitRecord { p: Point3::default(), normal: Vec3::default(), t: 0.0, front_face: false }
+        HitRecord {
+            p: Point3::default(),
+            normal: Vec3::default(),
+            t: 0.0,
+            front_face: false,
+        }
     }
 }
 
@@ -35,13 +40,13 @@ pub trait Hittable {
 }
 
 pub struct Sphere {
-    center: Point3, 
+    center: Point3,
     radius: f64,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64) -> Sphere{
-        Sphere{center, radius}
+    pub fn new(center: Point3, radius: f64) -> Sphere {
+        Sphere { center, radius }
     }
 }
 
@@ -82,7 +87,6 @@ impl Hittable for Sphere {
 pub type HittableList = Vec<Box<dyn Hittable>>;
 
 impl Hittable for HittableList {
-
     fn hit(&self, ray: &Ray, ray_t: RangeInclusive<f64>, record: &mut HitRecord) -> bool {
         let mut temp_record: HitRecord = HitRecord::default();
         let mut hit_anything = false;
