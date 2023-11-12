@@ -1,3 +1,5 @@
+use std::ops::RangeInclusive;
+
 use crate::ray::Ray;
 use crate::vec::{Point3, Vec3};
 
@@ -29,7 +31,7 @@ impl Default for HitRecord {
 }
 
 pub trait Hittable {
-    fn hit(&self, ray: &Ray, rayt_min: f64, rayt_max: f64, record: &mut HitRecord) -> bool;
+    fn hit(&self, ray: &Ray, ray_t: RangeInclusive<f64>, record: &mut HitRecord) -> bool;
 }
 
 pub struct Sphere {
@@ -44,7 +46,7 @@ impl Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, ray: &Ray, rayt_min: f64, rayt_max: f64, record: &mut HitRecord) -> bool {
+    fn hit(&self, ray: &Ray, ray_t: RangeInclusive<f64>, record: &mut HitRecord) -> bool {
         let oc = ray.origin - self.center; // center of sphere to origin of vector
         let a = ray.direction.length_squared();
         let half_b = Vec3::dot(ray.direction, oc);
@@ -61,9 +63,9 @@ impl Hittable for Sphere {
         // Find the nearest root that lies in the acceptable range.
         let mut root = (-half_b - sqrtd) / a;
 
-        if !(rayt_min..=rayt_max).contains(&root) {
+        if !ray_t.contains(&root) {
             root = (-half_b + sqrtd) / a;
-            if !(rayt_min..=rayt_max).contains(&root) {
+            if !ray_t.contains(&root) {
                 return false;
             };
         }
@@ -81,15 +83,15 @@ pub type HittableList = Vec<Box<dyn Hittable>>;
 
 impl Hittable for HittableList {
 
-    fn hit(&self, ray: &Ray, rayt_min: f64, rayt_max: f64, record: &mut HitRecord) -> bool {
+    fn hit(&self, ray: &Ray, ray_t: RangeInclusive<f64>, record: &mut HitRecord) -> bool {
         let mut temp_record: HitRecord = HitRecord::default();
         let mut hit_anything = false;
-        let mut closest_so_far = rayt_max;
+        let mut smallest_range_so_far = ray_t;
 
         for boxed_hittable in self {
-            if (*boxed_hittable).hit(ray, rayt_min, closest_so_far, &mut temp_record) {
+            if (*boxed_hittable).hit(ray, smallest_range_so_far.clone(), &mut temp_record) {
                 hit_anything = true;
-                closest_so_far = temp_record.t;
+                smallest_range_so_far = *smallest_range_so_far.start()..=temp_record.t;
                 *record = temp_record;
             }
         }
