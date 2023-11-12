@@ -1,6 +1,7 @@
 mod color;
 mod hittable;
 mod ray;
+mod utils;
 mod vec;
 
 use std::cmp::max;
@@ -8,14 +9,15 @@ use std::fs::File;
 use std::io::{self, Write};
 
 use crate::color::Color;
+use crate::hittable::{HitRecord, Hittable, HittableList, Sphere};
 use crate::ray::Ray;
 use crate::vec::{Point3, Vec3};
 
-fn get_ray_color(ray: &Ray) -> Color {
-    let t = ray.hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5);
-    if t > 0.0 {
-        let n = (ray.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit_vector();
-        return Color::new(n.x + 1.0, n.y + 1.0, n.z + 1.0) * 0.5;
+fn get_ray_color(ray: &Ray, world: &HittableList) -> Color {
+    let mut record = HitRecord:: default();
+
+    if world.hit(ray, 0.0, f64::INFINITY, &mut record) {
+        return (record.normal + Point3::new(1.0, 1.0, 1.0)) * 0.5;
     }
 
     let a = 0.5*(ray.direction.unit_vector().y + 1.0);
@@ -28,6 +30,12 @@ fn main() {
 
     // Calculate the image height, and ensure that it's at least 1.
     let image_height: i32 = max(1, (image_width as f64 / aspect_ratio) as i32);
+
+    // World
+    let mut world = HittableList::new();
+    world.push(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
+    world.push(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
+    //world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
 
     // Camera
     let focal_length: f64 = 1.0; 
@@ -69,7 +77,7 @@ fn main() {
             let ray_direction = pixel_center - camera_center;
             let r = Ray::new(camera_center, ray_direction);
 
-            let color = get_ray_color(&r);
+            let color = get_ray_color(&r, &world);
 
             ppm_str.push_str(&color.get_color());
         }
