@@ -14,10 +14,13 @@ pub fn get_random_f64() -> f64 {
 }
 
 pub fn get_random_f64_custom(min: f64, max: f64) -> f64 {
-    // Range [0.0, 1.0)
     Uniform::new(min, max).sample(&mut rand::thread_rng())
 }
 
 pub fn clamp(range: &RangeInclusive<f64>, x: f64) -> f64 {
     x.clamp(*range.start(), *range.end())
+}
+
+pub fn linear_to_gamma(linear_component: f64) -> f64 {
+    linear_component.sqrt()
 }

@@ -61,6 +61,14 @@ impl Mul<f64> for Vec3 {
     }
 }
 
+impl Mul<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, rhs: Vec3) -> Vec3 {
+        Vec3::new(self.x * rhs.x, self.y * rhs.y, self.z * rhs.z)
+    }
+}
+
 impl MulAssign<f64> for Vec3 {
     fn mul_assign(&mut self, rhs: f64) {
         self.x = self.x * rhs;
@@ -109,15 +117,15 @@ impl Vec3 {
         self / self.length()
     }
 
-    pub fn dot(lhs: Vec3, rhs: Vec3) -> f64 {
+    pub fn dot(lhs: &Vec3, rhs: &Vec3) -> f64 {
         lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z
     }
 
-    pub fn random() -> Self {
+    fn random() -> Self {
         Self::new(get_random_f64(), get_random_f64(), get_random_f64())
     }
 
-    pub fn random_custom(min: f64, max: f64) -> Self {
+    fn random_custom(min: f64, max: f64) -> Self {
         Self::new(
             get_random_f64_custom(min, max),
             get_random_f64_custom(min, max),
@@ -125,7 +133,7 @@ impl Vec3 {
         )
     }
 
-    pub fn random_in_unit_sphere() -> Self {
+    fn random_in_unit_sphere() -> Self {
         loop {
             let p = Self::random_custom(-1.0, 1.0);
             if p.length_squared() < 1.0 {
@@ -141,10 +149,20 @@ impl Vec3 {
     pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
         let on_unit_sphere = Self::random_unit_vector();
 
-        if Self::dot(*normal, on_unit_sphere) < 0.0 {
-            -on_unit_sphere
-        } else {
+        if Self::dot(normal, &on_unit_sphere) > 0.0 {
             on_unit_sphere
+        } else {
+            -on_unit_sphere
         }
     }
+
+    pub fn is_near_zero(&self) -> bool {
+        let s = 1e-8;
+        self.x.abs() < s && self.y.abs() < s && self.z.abs() < s
+    }
+
+    pub fn reflect(&self, normal: &Self) -> Self {
+        *self - *normal * (2.0 * Self::dot(self, normal))
+    }
+
 }

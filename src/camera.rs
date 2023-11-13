@@ -8,7 +8,8 @@ use crate::ray::Ray;
 use crate::utils::get_random_f64;
 use crate::vec::{Point3, Vec3};
 
-const SAMPLES_PER_PIXEL: i32 = 10;
+const SAMPLES_PER_PIXEL: i32 = 100;
+const MAX_DEPTH: i32 = 50;
 
 pub struct Camera {
     image_width: i32,
@@ -76,10 +77,10 @@ impl Camera {
             io::stdout().flush().unwrap();
 
             for i in 0..self.image_width {
-                let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+                let mut pixel_color = Color::default();
                 for _ in 0..SAMPLES_PER_PIXEL {
                     let ray = self.get_ray(i, j);
-                    pixel_color += Self::ray_color(&ray, world)
+                    pixel_color += Self::ray_color(&ray, world, MAX_DEPTH)
                 }
 
                 ppm_str.push_str(&pixel_color.get_color(SAMPLES_PER_PIXEL));
@@ -93,12 +94,16 @@ impl Camera {
         println!("All done!");
     }
 
-    fn ray_color(ray: &Ray, world: &HittableList) -> Color {
-        let mut record = HitRecord::default();
+    fn ray_color(ray: &Ray, world: &HittableList, depth: i32) -> Color {
+        if depth <= 0 {
+            return Color::new(0.0, 0.0, 0.0);
+        }
 
-        if world.hit(ray, 0.0..=f64::INFINITY, &mut record) {
-            let direction = Vec3::random_on_hemisphere(&record.normal);
-            return Self::ray_color(&Ray::new(record.p, direction), world) * 0.5;
+        if let Some(record) = world.hit(ray, 0.001..=f64::INFINITY) {
+            if let Some((attenuation, scattered)) = (*record.mat.clone().unwrap()).scatter(ray, record) {
+                return attenuation * Self::ray_color(&scattered, world, depth - 1)
+            }
+            return Color::default();
         }
 
         let a = 0.5 * (ray.direction.unit_vector().y + 1.0);
