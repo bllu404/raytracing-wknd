@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use crate::utils::{get_random_f64, get_random_f64_custom};
@@ -117,8 +118,16 @@ impl Vec3 {
         self / self.length()
     }
 
-    pub fn dot(lhs: &Vec3, rhs: &Vec3) -> f64 {
-        lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z
+    pub fn dot(&self, rhs: &Vec3) -> f64 {
+        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
+    }
+
+    pub fn cross(&self, rhs: &Vec3) -> Vec3 {
+        Vec3::new(
+            self.y * rhs.z - self.z * rhs.y,
+            -self.x * rhs.z + self.z * rhs.x,
+            self.x * rhs.y - self.y * rhs.x,
+        )
     }
 
     fn random() -> Self {
@@ -149,7 +158,7 @@ impl Vec3 {
     pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
         let on_unit_sphere = Self::random_unit_vector();
 
-        if Self::dot(normal, &on_unit_sphere) > 0.0 {
+        if normal.dot(&on_unit_sphere) > 0.0 {
             on_unit_sphere
         } else {
             -on_unit_sphere
@@ -162,7 +171,14 @@ impl Vec3 {
     }
 
     pub fn reflect(&self, normal: &Self) -> Self {
-        *self - *normal * (2.0 * Self::dot(self, normal))
+        *self - *normal * (2.0 * self.dot(normal))
     }
 
+    // Note: assumes `normal` `self` are unit vectors
+    pub fn refract(&self, normal: &Self, etai_over_etat: f64) -> Self {
+        let cos_theta = (-*self).dot(normal).min(1.0);
+        let r_out_perp = (*self + *normal * cos_theta) * etai_over_etat;
+        let r_out_parallel = *normal * -(1.0 - r_out_perp.length_squared()).abs().sqrt();
+        r_out_parallel + r_out_perp
+    }
 }

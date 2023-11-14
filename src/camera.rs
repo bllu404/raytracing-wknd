@@ -65,23 +65,26 @@ impl Camera {
         let mut img: RgbImage = ImageBuffer::new(self.image_width as u32, self.image_height as u32);
 
         // Collect computed pixel colors in a Vec
-        let pixel_colors: Vec<_> = (0..self.image_height).into_par_iter().flat_map(|j| {
-            (0..self.image_width).into_par_iter().map(move |i| {
-                let mut pixel_color = Color::default();
-                for _ in 0..SAMPLES_PER_PIXEL {
-                    let ray = self.get_ray(i, j);
-                    pixel_color += Self::ray_color(&ray, world, MAX_DEPTH);
-                }
-                (i, j, pixel_color.get_rgb(SAMPLES_PER_PIXEL))
+        let pixel_colors: Vec<_> = (0..self.image_height)
+            .into_par_iter()
+            .flat_map(|j| {
+                (0..self.image_width).into_par_iter().map(move |i| {
+                    let mut pixel_color = Color::default();
+                    for _ in 0..SAMPLES_PER_PIXEL {
+                        let ray = self.get_ray(i, j);
+                        pixel_color += Self::ray_color(&ray, world, MAX_DEPTH);
+                    }
+                    (i, j, pixel_color.get_rgb(SAMPLES_PER_PIXEL))
+                })
             })
-        }).collect();
+            .collect();
 
         // Update the image buffer with the computed colors
         for (i, j, pixel) in pixel_colors {
             *img.get_pixel_mut(i, j) = pixel;
         }
 
-        img.save("test.png").unwrap();
+        img.save("image.png").unwrap();
         println!("All done!");
     }
 
@@ -91,8 +94,10 @@ impl Camera {
         }
 
         if let Some(record) = world.hit(ray, 0.001..=f64::INFINITY) {
-            if let Some((attenuation, scattered)) = (*record.mat.clone().unwrap()).scatter(ray, record) {
-                return attenuation * Self::ray_color(&scattered, world, depth - 1)
+            if let Some((attenuation, scattered)) =
+                (*record.mat.clone().unwrap()).scatter(ray, record)
+            {
+                return attenuation * Self::ray_color(&scattered, world, depth - 1);
             }
             return Color::default();
         }
