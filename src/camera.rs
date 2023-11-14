@@ -1,7 +1,7 @@
 use image::{ImageBuffer, RgbImage};
+use rayon::prelude::*;
 
 use std::cmp::max;
-use std::io::{self, Write};
 
 use crate::color::Color;
 use crate::hittable::{Hittable, HittableList};
@@ -63,31 +63,25 @@ impl Camera {
     pub fn render(&self, world: &HittableList) {
         // Render
         let mut img: RgbImage = ImageBuffer::new(self.image_width as u32, self.image_height as u32);
-        for (i, j, pixel) in img.enumerate_pixels_mut() {
 
-            if j != 0 && i == 0 {
-                print!("\x1B[1A\x1B[K");
-            }
+        // Collect computed pixel colors in a Vec
+        let pixel_colors: Vec<_> = (0..self.image_height).into_par_iter().flat_map(|j| {
+            (0..self.image_width).into_par_iter().map(move |i| {
+                let mut pixel_color = Color::default();
+                for _ in 0..SAMPLES_PER_PIXEL {
+                    let ray = self.get_ray(i, j);
+                    pixel_color += Self::ray_color(&ray, world, MAX_DEPTH);
+                }
+                (i, j, pixel_color.get_rgb(SAMPLES_PER_PIXEL))
+            })
+        }).collect();
 
-            if i == 0 {
-                println!("Scanlines remaining: {}", self.image_height - j);
-                io::stdout().flush().unwrap();
-            }
-
-            
-
-            let mut pixel_color = Color::default();
-            for _ in 0..SAMPLES_PER_PIXEL {
-                let ray = self.get_ray(i, j);
-                pixel_color += Self::ray_color(&ray, world, MAX_DEPTH)
-            }
-
-            *pixel = pixel_color.get_rgb(SAMPLES_PER_PIXEL);
+        // Update the image buffer with the computed colors
+        for (i, j, pixel) in pixel_colors {
+            *img.get_pixel_mut(i, j) = pixel;
         }
 
         img.save("test.png").unwrap();
-
-        print!("\x1B[1A\x1B[K");
         println!("All done!");
     }
 

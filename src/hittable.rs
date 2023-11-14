@@ -1,5 +1,5 @@
 use std::ops::RangeInclusive;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::material::Material;
 use crate::ray::Ray;
@@ -9,7 +9,7 @@ use crate::vec::{Point3, Vec3};
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
-    pub mat: Option<Rc<dyn Material>>,
+    pub mat: Option<Arc<dyn Material>>,
     t: f64,
     front_face: bool,
 }
@@ -40,18 +40,18 @@ impl Default for HitRecord {
     }
 }
 
-pub trait Hittable {
+pub trait Hittable: Sync {
     fn hit(&self, ray: &Ray, ray_t: RangeInclusive<f64>) -> Option<HitRecord>;
 }
 
 pub struct Sphere {
     center: Point3,
     radius: f64,
-    mat: Rc<dyn Material>
+    mat: Arc<dyn Material>
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64, mat: Rc<dyn Material>) -> Sphere {
+    pub fn new(center: Point3, radius: f64, mat: Arc<dyn Material>) -> Sphere {
         Sphere { center, radius, mat}
     }
 }
@@ -90,7 +90,7 @@ impl Hittable for Sphere {
             t: root, 
             p,
             normal,
-            mat: Some(Rc::clone(&self.mat)),
+            mat: Some(Arc::clone(&self.mat)),
             front_face
         })
     }
