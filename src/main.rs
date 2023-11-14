@@ -7,6 +7,7 @@ mod utils;
 mod vec;
 
 use std::rc::Rc;
+use std::time::Instant;
 
 use crate::camera::Camera;
 use crate::color::Color;
@@ -18,19 +19,19 @@ fn main() {
     // World
     let mut world = HittableList::new();
 
-    let mat: Rc<dyn Material> = Rc::new(Lambertian{albedo: Color::new(0.3, 1.0, 0.3)});
-
     let material_ground: Rc<dyn Material> = Rc::new(Lambertian{albedo: Color::new(0.8, 0.8, 0.0)});
     let material_center: Rc<dyn Material> = Rc::new(Lambertian{albedo: Color::new(0.7, 0.3, 0.3)});
-    let material_left: Rc<dyn Material> = Rc::new(Metal{albedo: Color::new(0.8, 0.8, 0.8)});
-    let material_right: Rc<dyn Material> = Rc::new(Metal{albedo: Color::new(0.8, 0.6, 0.2)});
+    let material_left: Rc<dyn Material> = Rc::new(Metal{albedo: Color::new(0.8, 0.8, 0.8), f: 0.3});
+    let material_right: Rc<dyn Material> = Rc::new(Metal{albedo: Color::new(0.8, 0.6, 0.2), f: 1.0});
 
     world.push(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, material_ground)));
     world.push(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, material_center)));
     world.push(Box::new(Sphere::new(Point3::new(-1.0, 0.0, -1.0), 0.5, material_left)));
     world.push(Box::new(Sphere::new(Point3::new(1.0, 0.0, -1.0), 0.5, material_right)));
 
-    let cam = Camera::new(16.0 / 9.0, 800);
+    let cam = Camera::new(16.0 / 9.0, 400);
 
+    let start = Instant::now();
     cam.render(&world);
+    println!("Render time: {:?}", start.elapsed());
 }

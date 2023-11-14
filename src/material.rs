@@ -1,3 +1,4 @@
+use std::cmp::min;
 
 use crate::color::Color;
 use crate::hittable::HitRecord;
@@ -28,12 +29,20 @@ impl Material for Lambertian {
 
 pub struct Metal {
     pub albedo: Color,
+    pub f: f64, // fuzz factor
 }
+
+
 
 impl Material for Metal {
     fn scatter(&self, ray_in: &Ray, record: HitRecord) -> Option<(Color, Ray)> {
         let reflected = ray_in.direction.reflect(&record.normal);
 
-        Some((self.albedo, Ray::new(record.p, reflected)))
+        let scattered = Ray::new(record.p, reflected + Vec3::random_unit_vector() * self.f);
+        if Vec3::dot(&scattered.direction, &record.normal) > 0.0 {
+            Some((self.albedo, scattered))
+        } else {
+            None
+        }
     }
 }

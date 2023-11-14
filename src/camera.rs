@@ -1,9 +1,10 @@
+use image::{ImageBuffer, RgbImage};
+
 use std::cmp::max;
-use std::fs::File;
 use std::io::{self, Write};
 
 use crate::color::Color;
-use crate::hittable::{HitRecord, Hittable, HittableList};
+use crate::hittable::{Hittable, HittableList};
 use crate::ray::Ray;
 use crate::utils::get_random_f64;
 use crate::vec::{Point3, Vec3};
@@ -12,8 +13,8 @@ const SAMPLES_PER_PIXEL: i32 = 100;
 const MAX_DEPTH: i32 = 50;
 
 pub struct Camera {
-    image_width: i32,
-    image_height: i32,
+    image_width: u32,
+    image_height: u32,
     center: Point3,
     pixel00_loc: Point3,
     pixel_delta_u: Vec3,
@@ -21,9 +22,9 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, image_width: i32) -> Camera {
+    pub fn new(aspect_ratio: f64, image_width: u32) -> Camera {
         // Calculate the image height, and ensure that it's at least 1.
-        let image_height: i32 = max(1, (image_width as f64 / aspect_ratio) as i32);
+        let image_height: u32 = max(1, (image_width as f64 / aspect_ratio) as u32);
 
         // Camera
         let focal_length: f64 = 1.0;
@@ -60,35 +61,31 @@ impl Camera {
     }
 
     pub fn render(&self, world: &HittableList) {
-        let mut ppm_str = String::new();
-
-        ppm_str.push_str(&format!(
-            "P3\n{} {}\n255\n",
-            self.image_width, self.image_height
-        ));
-
         // Render
+        let mut img: RgbImage = ImageBuffer::new(self.image_width as u32, self.image_height as u32);
+        for (i, j, pixel) in img.enumerate_pixels_mut() {
 
-        for j in 0..self.image_height {
-            if j != 0 {
+            if j != 0 && i == 0 {
                 print!("\x1B[1A\x1B[K");
             }
-            println!("Scanlines remaining: {}", self.image_height - j);
-            io::stdout().flush().unwrap();
 
-            for i in 0..self.image_width {
-                let mut pixel_color = Color::default();
-                for _ in 0..SAMPLES_PER_PIXEL {
-                    let ray = self.get_ray(i, j);
-                    pixel_color += Self::ray_color(&ray, world, MAX_DEPTH)
-                }
-
-                ppm_str.push_str(&pixel_color.get_color(SAMPLES_PER_PIXEL));
+            if i == 0 {
+                println!("Scanlines remaining: {}", self.image_height - j);
+                io::stdout().flush().unwrap();
             }
+
+            
+
+            let mut pixel_color = Color::default();
+            for _ in 0..SAMPLES_PER_PIXEL {
+                let ray = self.get_ray(i, j);
+                pixel_color += Self::ray_color(&ray, world, MAX_DEPTH)
+            }
+
+            *pixel = pixel_color.get_rgb(SAMPLES_PER_PIXEL);
         }
 
-        let mut file = File::create("image.ppm").unwrap();
-        file.write_all(ppm_str.as_bytes()).unwrap();
+        img.save("test.png").unwrap();
 
         print!("\x1B[1A\x1B[K");
         println!("All done!");
@@ -110,7 +107,7 @@ impl Camera {
         Color::new(1.0, 1.0, 1.0) * (1.0 - a) + Color::new(0.5, 0.7, 1.0) * a
     }
 
-    fn get_ray(&self, i: i32, j: i32) -> Ray {
+    fn get_ray(&self, i: u32, j: u32) -> Ray {
         // Get a randomly sampled camera ray for the pixel at location i,j.
         let pixel_center =
             self.pixel00_loc + self.pixel_delta_u * i as f64 + self.pixel_delta_v * j as f64;
