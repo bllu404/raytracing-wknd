@@ -130,10 +130,6 @@ impl Vec3 {
         )
     }
 
-    fn random() -> Self {
-        Self::new(get_random_f64(), get_random_f64(), get_random_f64())
-    }
-
     fn random_custom(min: f64, max: f64) -> Self {
         Self::new(
             get_random_f64_custom(min, max),
@@ -153,16 +149,6 @@ impl Vec3 {
 
     pub fn random_unit_vector() -> Self {
         Self::random_in_unit_sphere().unit_vector()
-    }
-
-    pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
-        let on_unit_sphere = Self::random_unit_vector();
-
-        if normal.dot(&on_unit_sphere) > 0.0 {
-            on_unit_sphere
-        } else {
-            -on_unit_sphere
-        }
     }
 
     pub fn is_near_zero(&self) -> bool {

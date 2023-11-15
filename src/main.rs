@@ -20,7 +20,7 @@ use vec::Point3;
 fn main() {
     // World
     let mut world = HittableList::new();
-    /*
+
     let matte_grey: Arc<dyn Material> = Arc::new(Lambertian {
         albedo: Color::new(0.3, 0.3, 0.35),
     });
@@ -90,17 +90,19 @@ fn main() {
         )
         .translate(Translation::Left(0.75)),
     ));
-    */
 
-    let wizard = load_triangles("duck.glb");
-    println!("num triangles: {}", wizard.len());
-    for triangle in wizard {
+
+    // 3D model rendering
+    /* 
+    let duck = load_triangles("duck.glb");
+    println!("num triangles: {}", duck.len());
+    for triangle in duck {
         world.push(triangle);
     }
-
+    */
     let cam = Camera::new(16.0 / 9.0, 400);
 
     let start = Instant::now();
-    //cam.render(&world);
-    //println!("Time to render: {}", start.elapsed().as_secs());
+    cam.render(&world);
+    println!("Time to render: {}", start.elapsed().as_secs());
 }
