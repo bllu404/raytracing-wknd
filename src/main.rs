@@ -11,7 +11,7 @@ use std::time::Instant;
 
 use crate::camera::Camera;
 use crate::color::Color;
-use crate::hittable::{HittableList, Sphere, Triangle};
+use crate::hittable::{HittableList, Sphere, Translation, Triangle};
 use crate::material::{Dielectric, Lambertian, Material, Metal};
 use crate::vec::Point3;
 
@@ -19,21 +19,27 @@ fn main() {
     // World
     let mut world = HittableList::new();
 
-    let material_ground: Arc<dyn Material> = Arc::new(Lambertian {
-        albedo: Color::new(0.8, 0.8, 0.0),
+    let matte_grey: Arc<dyn Material> = Arc::new(Lambertian {
+        albedo: Color::new(0.3, 0.3, 0.35),
     });
-    let material_center: Arc<dyn Material> = Arc::new(Lambertian {
+    let matte_pink: Arc<dyn Material> = Arc::new(Lambertian {
         albedo: Color::new(0.7, 0.3, 0.3),
     });
-    let material_top: Arc<dyn Material> = Arc::new(Metal {
+    let metallic_pink: Arc<dyn Material> = Arc::new(Metal {
         albedo: Color::new(0.7, 0.3, 0.3),
         f: 0.0,
     });
-    let material_left: Arc<dyn Material> = Arc::new(Metal {
+
+    let metallic_green: Arc<dyn Material> = Arc::new(Metal {
+        albedo: Color::new(0.8, 0.8, 0.0),
+        f: 0.0,
+    });
+
+    let fuzzy_metallic_grey: Arc<dyn Material> = Arc::new(Metal {
         albedo: Color::new(0.5, 0.5, 0.5),
         f: 0.3,
     });
-    let material_right: Arc<dyn Material> = Arc::new(Metal {
+    let fuzzy_metallic_yellow: Arc<dyn Material> = Arc::new(Metal {
         albedo: Color::new(0.8, 0.6, 0.2),
         f: 1.0,
     });
@@ -44,43 +50,46 @@ fn main() {
     world.push(Box::new(Sphere::new(
         Point3::new(0.0, -100.5, -2.0),
         100.0,
-        material_ground,
+        matte_grey,
     )));
     world.push(Box::new(Sphere::new(
         Point3::new(0.0, 0.0, -2.0),
         0.5,
-        material_center.clone(),
+        matte_pink.clone(),
     )));
     world.push(Box::new(Sphere::new(
         Point3::new(0.0, 1.0, -2.0),
         0.5,
-        material_top.clone(),
+        metallic_pink.clone(),
     )));
     world.push(Box::new(Sphere::new(
         Point3::new(-1.0, 0.0, -2.0),
         0.5,
-        material_left,
+        fuzzy_metallic_grey,
     )));
     world.push(Box::new(Sphere::new(
         Point3::new(1.0, 0.0, -2.0),
         0.5,
-        material_right,
+        fuzzy_metallic_yellow,
     )));
-    /*
+
     world.push(Box::new(Sphere::new(
-        Point3::new(0.0, 0.0, -1.0),
-        0.3,
+        Point3::new(-0.5, -0.35, -1.0),
+        0.15,
         glass,
-    )));*/
-
-    world.push(Box::new(Triangle::new(
-        Arc::new(Point3::new(-1.0, 0.5, -1.25)),
-        Arc::new(Point3::new(-0.5, 0.5, -1.3)),
-        Arc::new(Point3::new(-0.75, 1.5, -1.375)),
-        material_top.clone(),
     )));
 
-    let cam = Camera::new(16.0 / 9.0, 400);
+    world.push(Box::new(
+        Triangle::new(
+            Arc::new(Point3::new(-1.5, 0.25, -1.5)),
+            Arc::new(Point3::new(-0.8, 0.25, -3.5)),
+            Arc::new(Point3::new(-1.15, 2.0, -2.5)),
+            metallic_green.clone(),
+        )
+        .translate(Translation::Left(0.75)),
+    ));
+
+    let cam = Camera::new(16.0 / 9.0, 800);
 
     let start = Instant::now();
     cam.render(&world);

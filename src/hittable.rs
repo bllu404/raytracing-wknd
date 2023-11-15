@@ -106,6 +106,15 @@ pub struct Triangle {
     mat: Arc<dyn Material>,
 }
 
+pub enum Translation {
+    Left(f64),
+    Right(f64),
+    Up(f64),
+    Down(f64),
+    Forward(f64),
+    Backward(f64),
+}
+
 impl Triangle {
     pub fn new(
         p1: Arc<Point3>,
@@ -115,27 +124,48 @@ impl Triangle {
     ) -> Triangle {
         Triangle { p1, p2, p3, mat }
     }
+
+    pub fn translate(self, translation: Translation) -> Self {
+        let translation_vec = match translation {
+            Translation::Left(amt) => Vec3::new(-amt, 0.0, 0.0),
+            Translation::Right(amt) => Vec3::new(-amt, 0.0, 0.0),
+            Translation::Up(amt) => Vec3::new(0.0, amt, 0.0),
+            Translation::Down(amt) => Vec3::new(0.0, -amt, 0.0),
+            Translation::Forward(amt) => Vec3::new(0.0, 0.0, amt),
+            Translation::Backward(amt) => Vec3::new(0.0, 0.0, -amt),
+        };
+        Triangle::new(
+            Arc::new(*self.p1 + translation_vec),
+            Arc::new(*self.p2 + translation_vec),
+            Arc::new(*self.p3 + translation_vec),
+            self.mat,
+        )
+    }
 }
 
 impl Hittable for Triangle {
     fn hit(&self, ray: &Ray, ray_t: RangeInclusive<f64>) -> Option<HitRecord> {
+        // TODO: move most of this logic into `new` and store it in the triangle struct
+        // so that it doesn't need to be recomputed for every ray
         let p1_p2 = *self.p2 - *self.p1;
         let p1_p3 = *self.p3 - *self.p1;
         let p2_p3 = *self.p3 - *self.p2;
         let mut plane_normal = (p1_p3).cross(&p1_p2).unit_vector();
 
-        // Ensure the plane_normal is facing away from the ray
-        if plane_normal.dot(&ray.direction) < 0.0 {
+        // Ensure the plane_normal is facing in the opposite direction
+        // from the ray
+        if plane_normal.dot(&ray.direction) > 0.0 {
             plane_normal = -plane_normal;
         }
-        // Finding the D such that the equation normal * point_on_plane = D is satisfied
+
+        // Finding the D such that the equation normal . point_on_plane = D is satisfied
         let d = plane_normal.dot(&(*self.p1));
 
         let discriminant = plane_normal.dot(&ray.direction);
 
         // If the ray is parallel to the plane containing the triangle,
         // then it does not intersect the triangle
-        if discriminant < 0.0001 {
+        if discriminant >= 0.0 {
             return None;
         }
 
@@ -160,7 +190,7 @@ impl Hittable for Triangle {
                 normal: plane_normal,
                 mat: Some(self.mat.clone()),
                 t,
-                front_face: false,
+                front_face: true,
             })
         } else {
             None

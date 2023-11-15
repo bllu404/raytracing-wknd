@@ -62,7 +62,7 @@ impl Material for Dielectric {
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
         let new_ray_direction = if refraction_ratio * sin_theta > 1.0
-            || reflectance(cos_theta, refraction_ratio) > get_random_f64()
+            //|| reflectance(cos_theta, refraction_ratio) > get_random_f64()
         {
             unit_direction.reflect(&record.normal)
         } else {

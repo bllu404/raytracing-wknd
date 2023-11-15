@@ -9,7 +9,7 @@ use crate::ray::Ray;
 use crate::utils::get_random_f64;
 use crate::vec::{Point3, Vec3};
 
-const SAMPLES_PER_PIXEL: i32 = 100;
+const SAMPLES_PER_PIXEL: i32 = 500;
 const MAX_DEPTH: i32 = 50;
 
 pub struct Camera {
