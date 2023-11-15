@@ -24,3 +24,7 @@ pub fn clamp(range: &RangeInclusive<f64>, x: f64) -> f64 {
 pub fn linear_to_gamma(linear_component: f64) -> f64 {
     linear_component.sqrt()
 }
+
+pub fn gamma_to_linear(linear_component: f64) -> f64 {
+    linear_component * linear_component
+}

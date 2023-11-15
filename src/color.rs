@@ -1,6 +1,6 @@
 use image::Rgb;
 
-use crate::utils::{clamp, linear_to_gamma};
+use crate::utils::{clamp, gamma_to_linear, linear_to_gamma};
 use crate::vec::Vec3;
 
 pub type Color = Vec3;
@@ -18,5 +18,13 @@ impl Color {
             (256.0 * clamp(&intensity, g)) as u8,
             (256.0 * clamp(&intensity, b)) as u8,
         ])
+    }
+
+    pub fn get_color(r: f32, g: f32, b: f32) -> Color {
+        Color::new(
+            gamma_to_linear(r as f64 / 256.0),
+            gamma_to_linear(g as f64 / 256.0),
+            gamma_to_linear(b as f64 / 256.0),
+        )
     }
 }

@@ -100,10 +100,15 @@ impl Hittable for Sphere {
 }
 
 pub struct Triangle {
-    p1: Arc<Point3>,
-    p2: Arc<Point3>,
-    p3: Arc<Point3>,
+    p1: Point3,
+    p2: Point3,
+    p3: Point3,
     mat: Arc<dyn Material>,
+    p1_p2: Vec3,
+    p1_p3: Vec3,
+    p2_p3: Vec3,
+    normal: Vec3,
+    d: f64,
 }
 
 pub enum Translation {
@@ -116,13 +121,54 @@ pub enum Translation {
 }
 
 impl Triangle {
-    pub fn new(
-        p1: Arc<Point3>,
-        p2: Arc<Point3>,
-        p3: Arc<Point3>,
+    pub fn new(p1: Point3, p2: Point3, p3: Point3, mat: Arc<dyn Material>) -> Triangle {
+        let p1_p2 = p2 - p1;
+        let p1_p3 = p3 - p1;
+        let p2_p3 = p3 - p2;
+        let normal = (p1_p3).cross(&p1_p2).unit_vector();
+
+        // Finding the D such that the equation normal . point_on_plane = D is satisfied
+        let d = normal.dot(&(p1));
+
+        Triangle {
+            p1,
+            p2,
+            p3,
+            mat,
+            p1_p2,
+            p1_p3,
+            p2_p3,
+            normal,
+            d,
+        }
+    }
+
+    pub fn new_with_normal(
+        p1: Point3,
+        p2: Point3,
+        p3: Point3,
+        normal: Vec3,
         mat: Arc<dyn Material>,
     ) -> Triangle {
-        Triangle { p1, p2, p3, mat }
+        let p1_p2 = p2 - p1;
+        let p1_p3 = p3 - p1;
+        let p2_p3 = p3 - p2;
+        let normal = (p1_p3).cross(&p1_p2).unit_vector();
+
+        // Finding the D such that the equation normal . point_on_plane = D is satisfied
+        let d = normal.dot(&(p1));
+
+        Triangle {
+            p1,
+            p2,
+            p3,
+            mat,
+            p1_p2,
+            p1_p3,
+            p2_p3,
+            normal,
+            d,
+        }
     }
 
     pub fn translate(self, translation: Translation) -> Self {
@@ -135,9 +181,19 @@ impl Triangle {
             Translation::Backward(amt) => Vec3::new(0.0, 0.0, -amt),
         };
         Triangle::new(
-            Arc::new(*self.p1 + translation_vec),
-            Arc::new(*self.p2 + translation_vec),
-            Arc::new(*self.p3 + translation_vec),
+            self.p1 + translation_vec,
+            self.p2 + translation_vec,
+            self.p3 + translation_vec,
+            self.mat,
+        )
+    }
+
+    pub fn scale(self, scalar: f64) -> Self {
+        Triangle::new_with_normal(
+            self.p1 * scalar, 
+            self.p2 * scalar,
+            self.p3 * scalar,
+            self.normal, 
             self.mat,
         )
     }
@@ -145,23 +201,13 @@ impl Triangle {
 
 impl Hittable for Triangle {
     fn hit(&self, ray: &Ray, ray_t: RangeInclusive<f64>) -> Option<HitRecord> {
-        // TODO: move most of this logic into `new` and store it in the triangle struct
-        // so that it doesn't need to be recomputed for every ray
-        let p1_p2 = *self.p2 - *self.p1;
-        let p1_p3 = *self.p3 - *self.p1;
-        let p2_p3 = *self.p3 - *self.p2;
-        let mut plane_normal = (p1_p3).cross(&p1_p2).unit_vector();
+        let normal = if self.normal.dot(&ray.direction) > 0.0 {
+            -self.normal
+        } else {
+            self.normal
+        };
 
-        // Ensure the plane_normal is facing in the opposite direction
-        // from the ray
-        if plane_normal.dot(&ray.direction) > 0.0 {
-            plane_normal = -plane_normal;
-        }
-
-        // Finding the D such that the equation normal . point_on_plane = D is satisfied
-        let d = plane_normal.dot(&(*self.p1));
-
-        let discriminant = plane_normal.dot(&ray.direction);
+        let discriminant = normal.dot(&ray.direction);
 
         // If the ray is parallel to the plane containing the triangle,
         // then it does not intersect the triangle
@@ -169,7 +215,7 @@ impl Hittable for Triangle {
             return None;
         }
 
-        let t = (d - plane_normal.dot(&ray.origin)) / discriminant;
+        let t = (self.d - normal.dot(&ray.origin)) / discriminant;
 
         if !ray_t.contains(&t) {
             return None;
@@ -177,17 +223,20 @@ impl Hittable for Triangle {
 
         let point_of_intersection = ray.origin + ray.direction * t;
 
-        let double_triangle_area = p1_p3.cross(&p1_p2).length();
+        let double_triangle_area = self.p1_p3.cross(&self.p1_p2).length();
 
-        let p1_poi = point_of_intersection - *self.p1;
-        let alpha = p1_p3.cross(&p1_poi).length();
-        let beta = p1_p2.cross(&p1_poi).length();
-        let gamma = p2_p3.cross(&(point_of_intersection - *self.p2)).length();
+        let p1_poi = point_of_intersection - self.p1;
+        let alpha = self.p1_p3.cross(&p1_poi).length();
+        let beta = self.p1_p2.cross(&p1_poi).length();
+        let gamma = self
+            .p2_p3
+            .cross(&(point_of_intersection - self.p2))
+            .length();
 
         if alpha + beta + gamma <= double_triangle_area {
             Some(HitRecord {
                 p: point_of_intersection,
-                normal: plane_normal,
+                normal,
                 mat: Some(self.mat.clone()),
                 t,
                 front_face: true,
