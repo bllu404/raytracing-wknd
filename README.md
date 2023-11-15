@@ -11,4 +11,5 @@ Some results:
 ![Balls and a metallic triangle](./highres3.png)
 
 ![Poorly rendered duck](./image.png)
+
 This was an attempt at rendering a 3D model of a duck. It's a work in progress...

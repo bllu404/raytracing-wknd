@@ -190,10 +190,10 @@ impl Triangle {
 
     pub fn scale(self, scalar: f64) -> Self {
         Triangle::new_with_normal(
-            self.p1 * scalar, 
+            self.p1 * scalar,
             self.p2 * scalar,
             self.p3 * scalar,
-            self.normal, 
+            self.normal,
             self.mat,
         )
     }

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::color::Color;
-use crate::hittable::{Triangle, Translation};
+use crate::hittable::{Translation, Triangle};
 use crate::material::Lambertian;
 use crate::vec::{Point3, Vec3};
 
@@ -50,6 +50,6 @@ pub fn load_triangles(filename: &str) -> Vec<Box<Triangle>> {
             Box::new(triangle)
         })
         .collect();
-    
+
     triangles
 }

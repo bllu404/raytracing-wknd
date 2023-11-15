@@ -91,9 +91,8 @@ fn main() {
         .translate(Translation::Left(0.75)),
     ));
 
-
     // 3D model rendering
-    /* 
+    /*
     let duck = load_triangles("duck.glb");
     println!("num triangles: {}", duck.len());
     for triangle in duck {
